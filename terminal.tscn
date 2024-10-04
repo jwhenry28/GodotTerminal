@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://3vpj3wcvyggi"]
+
+[ext_resource type="Script" path="res://terminal.gd" id="1_dhhal"]
+[ext_resource type="Theme" uid="uid://db7wj1rqac2lo" path="res://terminal.tres" id="1_ndfty"]
+
+[node name="Terminal" type="Panel"]
+offset_right = 512.0
+offset_bottom = 384.0
+focus_mode = 1
+theme = ExtResource("1_ndfty")
+script = ExtResource("1_dhhal")
