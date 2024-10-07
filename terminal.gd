@@ -8,14 +8,19 @@ var font: Font
 var _buffer: Array
 var caps_lock_enabled: bool
 
+var cursor_right_limit: int
 var cursor_idx: int
+
+var _cmd_string
 
 
 func _init() -> void:
 	font = preload("res://fonts/SFMonoMedium.otf")
-	_buffer = []
+	_buffer = [ null ]
 	caps_lock_enabled = false
 	cursor_idx = 0
+	cursor_right_limit = 0
+	_cmd_string = null
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -35,55 +40,95 @@ func _draw():
 	var x_limit = size.x - CHAR_WIDTH
 	var y_limit = size.y - CHAR_HEIGHT
 	
-	var x = 0
-	var y = CHAR_HEIGHT
+	const x_start = 0
+	const y_start = CHAR_HEIGHT
+	var char_pos = Vector2(x_start, y_start)
+	var char_row_count = int(size.x / CHAR_WIDTH)
 	
+	var idx = 0
+	print("draw: cursor_idx=", cursor_idx)
 	for key in _buffer:
-		print(x, ",", y)
-		match key:
-			"\n":
-				x = 0
-				y += CHAR_HEIGHT
-				continue
-			_:
-				draw_char(font, Vector2(x, y), key)
+		if key != null:
+			var draw_key = key
+			if key == "\n":
+				draw_key = " "
+			draw_char(font, char_pos, draw_key)
+			
+		if idx == cursor_idx:
+			print("draw: drawing cursor on [", key, "]")
+			draw_char(font, char_pos, CURSOR)
 		
-		x += CHAR_WIDTH
+		char_pos.x += CHAR_WIDTH
+		idx += 1
 		
-		if x >= x_limit:
-			x = 0
-			y += CHAR_HEIGHT
-	
-	var cursor_pos = Vector2(
-		cursor_idx % int(size.x),
-		floor(cursor_idx / size.x)
-	)
-	
-	draw_char(font, cursor_pos, CURSOR)
-
-
-func write(text: String) -> void:
-	for c in text:
-		if c == "\n":
-			cursor_idx += size.x
-		else:
-			cursor_idx += CHAR_WIDTH
-		_buffer.append(c)
-	queue_redraw()
+		if key == "\n" or char_pos.x >= x_limit:
+			char_pos.x = 0
+			char_pos.y += CHAR_HEIGHT
 
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and !event.is_echo():
 		var c = event_to_char(event)
 		if c != "":
-			_buffer.append(c)
+			add_to_buffer(c, c=="\n")
+			cursor_idx = _buffer.size() - 1
+		queue_redraw()
+		
+		if _cmd_string != null:
+			print("input: _cmd_string=", _cmd_string)
+			run_command(_cmd_string)
 			queue_redraw()
+			_cmd_string = null
+
+
+func add_to_buffer(text: String, append_to_buffer: bool = false) -> void:
+	assert(text.length() == 1, "add_to_buffer: should only add char (input text len=" + str(text.length()) + ")")
+	
+	#print("add: cursor_idx=", cursor_idx, " _buffer.size=", _buffer.size())
+	if append_to_buffer:
+		print("add: cursor_idx=", cursor_idx, " _buffer.size=", _buffer.size())
+		print("add: replacing character: ", _buffer[_buffer.size() - 1], " with ", text)
+		_buffer.insert(_buffer.size() - 1, text)
+	else:
+		_buffer.insert(cursor_idx, text)
+	
+	if _buffer[-1] != null:
+		_buffer.append(null)
+	cursor_idx += 1
+
+
+func write(text: String) -> void:
+	var char_row_count = int(size.x / CHAR_WIDTH)
+	for c in text:
+		add_to_buffer(c)
+	cursor_right_limit = cursor_idx
+	print("write: ", _buffer[cursor_idx])
+	print("write: ", type_string(typeof(_buffer[cursor_idx])))
+	queue_redraw()
+
+
+func run_command(cmd_string: String) -> void:
+	print("run: cmd_string=", cmd_string)
+	match cmd_string:
+		"whoami":
+			write("a1rship\n")
+		"pwd": 
+			write("/home/a1rsh1p\n")
+		_:
+			write("command not found\n")
+	write("> ")
+
+
+func get_cmd_string() -> String:
+	return "".join(PackedStringArray(_buffer.slice(cursor_right_limit, _buffer.size()-1)))
 
 
 func event_to_char(event: InputEventKey) -> String:
 	var keycode = event.keycode
 	var keycode_string = OS.get_keycode_string(event.get_keycode_with_modifiers())
 	var c = ""
+	
+	print("event: ", keycode_string)
 	
 	match keycode_string:
 		"A" when caps_lock_enabled:
@@ -331,14 +376,29 @@ func event_to_char(event: InputEventKey) -> String:
 		"CapsLock":
 			caps_lock_enabled = !caps_lock_enabled
 		"Enter":
+			_cmd_string = get_cmd_string()
+			print("event: cmd_string=", _cmd_string)
 			c = "\n"
+		"Left": 
+			print("event: cursor_right_limit=", cursor_right_limit, " cursor_idx=", cursor_idx)
+			cursor_idx = max(cursor_right_limit, cursor_idx - 1)
+			while cursor_idx > cursor_right_limit and _buffer[cursor_idx] == "\n":
+				cursor_idx = cursor_idx - 1
+		"Right": 
+			cursor_idx = min(cursor_idx + 1, _buffer.size() - 1)
+			while cursor_idx < _buffer.size() and _buffer[cursor_idx] == "\n":
+				cursor_idx = cursor_idx + 1
+		"Up": 
+			# TODO: repeat last command
+			pass
+		"Down": 
+			# TODO: repeat next command
+			pass
+		"Backspace":
+			if cursor_idx > cursor_right_limit:
+				_buffer.remove_at(cursor_idx - 1)
+				cursor_idx -= 1
 		_:
 			c = ""
-	
-	if c.length() > 0:
-		if c == "\n":
-			cursor_idx += size.x
-		else:
-			cursor_idx += CHAR_WIDTH
 	
 	return c
