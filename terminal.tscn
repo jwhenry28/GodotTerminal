@@ -9,3 +9,5 @@ offset_bottom = 384.0
 focus_mode = 1
 theme = ExtResource("1_ndfty")
 script = ExtResource("1_dhhal")
+_text_border_size_x = 8
+_text_border_size_y = 4

@@ -5,6 +5,11 @@ const CHAR_HEIGHT: int = 16
 const CURSOR: String = "█"
 
 var font: Font
+var _font_size: int
+var _color: Color
+@export var _text_border_size_x: int
+@export var _text_border_size_y: int
+
 var _buffer: Array
 var caps_lock_enabled: bool
 
@@ -16,8 +21,10 @@ var _cmd_strings: Array
 var _last_cmd_idx: int
 
 
-func _init() -> void:
-	font = preload("res://fonts/SFMonoMedium.otf")
+func _init(theme_name: String = "") -> void:
+	if theme_name != "":
+		theme = load(theme_name)
+	font = preload("res://fonts/SFMonoMedium.otf")# TODO - move this into constructor
 	_buffer = [ null ]
 	caps_lock_enabled = false
 	cursor_idx = 0
@@ -25,6 +32,9 @@ func _init() -> void:
 	_cmd_strings = [ "" ]
 	_last_cmd_idx = 0
 	_cmd_string = null
+	
+	_font_size = 16 # TODO - move this into constructor
+	_color = Color8(57, 255, 20, 255) # TODO - move this into constructor
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -44,8 +54,8 @@ func _draw():
 	var x_limit = size.x - CHAR_WIDTH
 	var y_limit = size.y - CHAR_HEIGHT
 	
-	const x_start = 0
-	const y_start = CHAR_HEIGHT
+	var x_start = _text_border_size_x
+	var y_start = CHAR_HEIGHT + _text_border_size_y
 	var char_pos = Vector2(x_start, y_start)
 	var char_row_count = int(size.x / CHAR_WIDTH)
 	
@@ -56,17 +66,17 @@ func _draw():
 			var draw_key = key
 			if key == "\n":
 				draw_key = " "
-			draw_char(font, char_pos, draw_key)
+			draw_char(font, char_pos, draw_key, _font_size, _color)
 			
 		if idx == cursor_idx:
 			print("draw: drawing cursor on [", key, "]")
-			draw_char(font, char_pos, CURSOR)
+			draw_char(font, char_pos, CURSOR, _font_size, _color)
 		
 		char_pos.x += CHAR_WIDTH
 		idx += 1
 		
 		if key == "\n" or char_pos.x >= x_limit:
-			char_pos.x = 0
+			char_pos.x = _text_border_size_x
 			char_pos.y += CHAR_HEIGHT
 
 
