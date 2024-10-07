@@ -15,6 +15,7 @@ var caps_lock_enabled: bool
 
 var cursor_right_limit: int
 var cursor_idx: int
+var _start_line_idx: int
 
 var _cmd_string
 var _cmd_strings: Array
@@ -32,6 +33,7 @@ func _init(theme_name: String = "") -> void:
 	_cmd_strings = [ "" ]
 	_last_cmd_idx = 0
 	_cmd_string = null
+	_start_line_idx = 0
 	
 	_font_size = 16 # TODO - move this into constructor
 	_color = Color8(57, 255, 20, 255) # TODO - move this into constructor
@@ -42,6 +44,8 @@ func _ready() -> void:
 	print(size)
 	
 	write("WELCOME TO TELCO 1\nTYPE 'HELP' TO BEGIN\n")
+	for i in range(64):
+		write(str(i) + "\n")
 	write("> ")
 
 
@@ -60,13 +64,17 @@ func _draw():
 	var char_row_count = int(size.x / CHAR_WIDTH)
 	
 	var idx = 0
+	var line_idx = 0
+	var start_line_index = _start_line_idx
+	var end_line_index = floor((size.y - (_text_border_size_y * 2)) / CHAR_HEIGHT) - 1
 	print("draw: cursor_idx=", cursor_idx)
 	for key in _buffer:
 		if key != null:
 			var draw_key = key
 			if key == "\n":
 				draw_key = " "
-			draw_char(font, char_pos, draw_key, _font_size, _color)
+			if start_line_index <= line_idx and line_idx <= end_line_index:
+				draw_char(font, char_pos, draw_key, _font_size, _color)
 			
 		if idx == cursor_idx:
 			print("draw: drawing cursor on [", key, "]")
@@ -78,9 +86,11 @@ func _draw():
 		if key == "\n" or char_pos.x >= x_limit:
 			char_pos.x = _text_border_size_x
 			char_pos.y += CHAR_HEIGHT
+			line_idx += 1
 
 
 func _gui_input(event: InputEvent) -> void:
+	print(event)
 	if event is InputEventKey and event.pressed and !event.is_echo():
 		var c = event_to_char(event)
 		if c != "":
