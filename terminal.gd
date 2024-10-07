@@ -12,6 +12,8 @@ var cursor_right_limit: int
 var cursor_idx: int
 
 var _cmd_string
+var _cmd_strings: Array
+var _last_cmd_idx: int
 
 
 func _init() -> void:
@@ -20,6 +22,8 @@ func _init() -> void:
 	caps_lock_enabled = false
 	cursor_idx = 0
 	cursor_right_limit = 0
+	_cmd_strings = [ "" ]
+	_last_cmd_idx = 0
 	_cmd_string = null
 
 # Called when the node enters the scene tree for the first time.
@@ -79,6 +83,13 @@ func _gui_input(event: InputEvent) -> void:
 			run_command(_cmd_string)
 			queue_redraw()
 			_cmd_string = null
+
+
+func clear_current_line() -> void:
+	while cursor_idx > cursor_right_limit:
+		_buffer.remove_at(cursor_right_limit)
+		cursor_idx -= 1
+		
 
 
 func add_to_buffer(text: String, append_to_buffer: bool = false) -> void:
@@ -377,6 +388,10 @@ func event_to_char(event: InputEventKey) -> String:
 			caps_lock_enabled = !caps_lock_enabled
 		"Enter":
 			_cmd_string = get_cmd_string()
+			if _cmd_string != _cmd_strings[_cmd_strings.size() - 2]:
+				_cmd_strings[-1] = _cmd_string
+				_cmd_strings.append("")
+			_last_cmd_idx = _cmd_strings.size() - 1
 			print("event: cmd_string=", _cmd_string)
 			c = "\n"
 		"Left": 
@@ -389,11 +404,23 @@ func event_to_char(event: InputEventKey) -> String:
 			while cursor_idx < _buffer.size() and _buffer[cursor_idx] == "\n":
 				cursor_idx = cursor_idx + 1
 		"Up": 
-			# TODO: repeat last command
-			pass
+			print("event: _last_cmd_idx=", _last_cmd_idx)
+			if _cmd_strings.size() > 0 and _last_cmd_idx > -1:
+				clear_current_line()
+				_last_cmd_idx = max(0, _last_cmd_idx - 1)
+				var last_cmd = _cmd_strings[_last_cmd_idx]
+				print("event: last_cmd=", last_cmd)
+				for _c in last_cmd:
+					add_to_buffer(_c)
 		"Down": 
-			# TODO: repeat next command
-			pass
+			print("event: _last_cmd_idx=", _last_cmd_idx)
+			if _cmd_strings.size() > 0 and _last_cmd_idx < _cmd_strings.size()-1:
+				clear_current_line()
+				_last_cmd_idx = min(_last_cmd_idx + 1, _cmd_strings.size() - 1)
+				var last_cmd = _cmd_strings[_last_cmd_idx]
+				print("event: last_cmd=", last_cmd)
+				for _c in last_cmd:
+					add_to_buffer(_c)
 		"Backspace":
 			if cursor_idx > cursor_right_limit:
 				_buffer.remove_at(cursor_idx - 1)
