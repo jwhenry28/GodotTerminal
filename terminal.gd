@@ -22,6 +22,18 @@ var _cmd_strings: Array
 var _last_cmd_idx: int
 
 
+func get_num_window_rows() -> int:
+	return floor((size.y - (_text_border_size_y * 2)) / CHAR_HEIGHT) - 1
+
+
+func get_num_rows_in_buffer() -> int:
+	var num_rows_in_buffer = 0
+	var buffer_string = "".join(PackedStringArray(_buffer.slice(0, _buffer.size()-1)))
+	for item in buffer_string.split("\n"):
+		num_rows_in_buffer += ceil((item.length() * CHAR_WIDTH) / size.x)
+	return num_rows_in_buffer
+
+
 func _init(theme_name: String = "") -> void:
 	if theme_name != "":
 		theme = load(theme_name)
@@ -43,10 +55,16 @@ func _ready() -> void:
 	grab_focus()
 	print(size)
 	
-	write("WELCOME TO TELCO 1\nTYPE 'HELP' TO BEGIN\n")
-	for i in range(64):
-		write(str(i) + "\n")
+	#for i in range(64):
+		#write(str(i) + "\n")
+	write("WELCOME TO TELCO1\nTYPE 'HELP' TO BEGIN:\n")
 	write("> ")
+	
+	for i in range(32):
+		var cmds = ["whoami", "pwd", "test"]
+		var cmd = cmds[i % cmds.size()]
+		write(cmd + "\n")
+		run_command(cmd)
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -61,36 +79,62 @@ func _draw():
 	var x_start = _text_border_size_x
 	var y_start = CHAR_HEIGHT + _text_border_size_y
 	var char_pos = Vector2(x_start, y_start)
-	var char_row_count = int(size.x / CHAR_WIDTH)
 	
 	var idx = 0
+	
+	print("write: (draw) _num_rows_in_buffer=", get_num_rows_in_buffer())
+	
 	var line_idx = 0
 	var start_line_index = _start_line_idx
-	var end_line_index = floor((size.y - (_text_border_size_y * 2)) / CHAR_HEIGHT) - 1
+	var end_line_index = _start_line_idx + min(get_num_window_rows(), get_num_rows_in_buffer())
+	
 	print("draw: cursor_idx=", cursor_idx)
+	print("draw: start_line_index=", start_line_index)
+	print("draw: end_line_index=", end_line_index)
+	print("draw: num_window_rows=", get_num_window_rows())
+	print("draw: _num_rows_in_buffer=", get_num_rows_in_buffer())
 	for key in _buffer:
+		var idx_in_range = start_line_index <= line_idx and line_idx <= end_line_index
+		
 		if key != null:
 			var draw_key = key
+			
 			if key == "\n":
 				draw_key = " "
-			if start_line_index <= line_idx and line_idx <= end_line_index:
+				
+			if idx_in_range:
 				draw_char(font, char_pos, draw_key, _font_size, _color)
+				char_pos.x += CHAR_WIDTH
+				
+			if key == "\n" or char_pos.x >= x_limit:
+				if idx_in_range:
+					char_pos.x = _text_border_size_x
+					char_pos.y += CHAR_HEIGHT
+				line_idx += 1
 			
-		if idx == cursor_idx:
+		if idx_in_range and idx == cursor_idx:
 			print("draw: drawing cursor on [", key, "]")
 			draw_char(font, char_pos, CURSOR, _font_size, _color)
 		
-		char_pos.x += CHAR_WIDTH
 		idx += 1
-		
-		if key == "\n" or char_pos.x >= x_limit:
-			char_pos.x = _text_border_size_x
-			char_pos.y += CHAR_HEIGHT
-			line_idx += 1
 
 
 func _gui_input(event: InputEvent) -> void:
-	print(event)
+	if event is InputEventMouseButton:
+		if event.is_pressed():
+			if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+				print("event: wheel up")
+				print(event)
+				if get_num_rows_in_buffer() > get_num_window_rows():
+					_start_line_idx = min(_start_line_idx + 1, get_num_rows_in_buffer() - get_num_window_rows())
+				else:
+					_start_line_idx = 0
+			if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+				print("event: wheel down")
+				print(event)
+				_start_line_idx = max(0, _start_line_idx - 1)
+			queue_redraw()
+	
 	if event is InputEventKey and event.pressed and !event.is_echo():
 		var c = event_to_char(event)
 		if c != "":
@@ -133,8 +177,9 @@ func write(text: String) -> void:
 	for c in text:
 		add_to_buffer(c)
 	cursor_right_limit = cursor_idx
-	print("write: ", _buffer[cursor_idx])
-	print("write: ", type_string(typeof(_buffer[cursor_idx])))
+	print("write: max=", get_num_rows_in_buffer() - get_num_window_rows())
+	_start_line_idx = max(0, get_num_rows_in_buffer() - get_num_window_rows())
+	print("write: _start_line_idx=", _start_line_idx)
 	queue_redraw()
 
 
@@ -447,5 +492,7 @@ func event_to_char(event: InputEventKey) -> String:
 				cursor_idx -= 1
 		_:
 			c = ""
+	
+	_start_line_idx = max(0, get_num_rows_in_buffer() - get_num_window_rows())
 	
 	return c
