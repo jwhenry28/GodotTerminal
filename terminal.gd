@@ -30,7 +30,10 @@ func get_num_rows_in_buffer() -> int:
 	var num_rows_in_buffer = 0
 	var buffer_string = "".join(PackedStringArray(_buffer.slice(0, _buffer.size()-1)))
 	for item in buffer_string.split("\n"):
-		num_rows_in_buffer += ceil((item.length() * CHAR_WIDTH) / size.x)
+		var tmp_rows = ceil((item.length() * CHAR_WIDTH) / size.x)
+		print("get_num_rows_in_buffer: tmp_rows=", tmp_rows)
+		num_rows_in_buffer += tmp_rows
+	print("get_num_rows_in_buffer: ret=", num_rows_in_buffer)
 	return num_rows_in_buffer
 
 
@@ -122,14 +125,14 @@ func _draw():
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.is_pressed():
-			if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 				print("event: wheel up")
 				print(event)
 				if get_num_rows_in_buffer() > get_num_window_rows():
 					_start_line_idx = min(_start_line_idx + 1, get_num_rows_in_buffer() - get_num_window_rows())
 				else:
 					_start_line_idx = 0
-			if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			if event.button_index == MOUSE_BUTTON_WHEEL_UP:
 				print("event: wheel down")
 				print(event)
 				_start_line_idx = max(0, _start_line_idx - 1)
@@ -190,6 +193,8 @@ func run_command(cmd_string: String) -> void:
 			write("a1rship\n")
 		"pwd": 
 			write("/home/a1rsh1p\n")
+		"lorem":
+			write("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n")
 		_:
 			write("command not found\n")
 	write("> ")
