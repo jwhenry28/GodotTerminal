@@ -111,12 +111,12 @@ func _draw():
 				
 			if idx_in_range:
 				draw_char(_font, char_pos, draw_key, _font_size, _font_color)
-				char_pos.x += _CHAR_WIDTH
+			char_pos.x += _CHAR_WIDTH
 				
 			if key == "\n" or char_pos.x >= x_limit:
 				if idx_in_range:
-					char_pos.x = _text_border_size_x
 					char_pos.y += _CHAR_HEIGHT
+				char_pos.x = _text_border_size_x
 				line_idx += 1
 			
 		if idx_in_range and idx == _cursor_idx:
