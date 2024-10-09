@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://3vpj3wcvyggi"]
+[gd_scene load_steps=4 format=3 uid="uid://3vpj3wcvyggi"]
 
 [ext_resource type="Script" path="res://terminal.gd" id="1_dhhal"]
 [ext_resource type="Theme" uid="uid://db7wj1rqac2lo" path="res://terminal.tres" id="1_ndfty"]
+[ext_resource type="FontFile" uid="uid://b40dxgqa1gy7r" path="res://fonts/SFMonoMedium.otf" id="3_n4a5u"]
 
 [node name="Terminal" type="Panel"]
 offset_right = 512.0
@@ -9,5 +10,8 @@ offset_bottom = 384.0
 focus_mode = 1
 theme = ExtResource("1_ndfty")
 script = ExtResource("1_dhhal")
+_font = ExtResource("3_n4a5u")
+_font_size = 16
+_font_color = Color(0.223529, 1, 0.0784314, 1)
 _text_border_size_x = 8
 _text_border_size_y = 4
