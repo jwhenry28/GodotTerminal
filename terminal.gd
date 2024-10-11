@@ -39,14 +39,7 @@ func get_num_rows_in_buffer() -> int:
 	var buffer_string = "".join(PackedStringArray(_buffer.slice(0, _buffer.size()-1)))
 	for item in buffer_string.split("\n"):
 		var tmp_rows = ceil((item.length() * _CHAR_WIDTH) / get_window_x())
-		if item.begins_with("Lorem"):
-			print("get_num_rows_in_buffer: num_chars=", item.length())
-			print("get_num_rows_in_buffer: CHAR_WIDTH=", _CHAR_WIDTH)
-			print("get_num_rows_in_buffer: size.x=", get_window_x())
-			print("get_num_rows_in_buffer: raw_calc=", (item.length() * _CHAR_WIDTH) / get_window_x())
-			print("get_num_rows_in_buffer: tmp_rows=", tmp_rows)
 		num_rows_in_buffer += tmp_rows
-	print("get_num_rows_in_buffer: ret=", num_rows_in_buffer)
 	return num_rows_in_buffer
 
 
